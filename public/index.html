@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>운빨 테스트 | Luck Test</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 시작 화면 -->
+        <div id="start-screen" class="screen active">
+            <div class="logo">🍀</div>
+            <h1>운빨 테스트</h1>
+            <p class="subtitle">당신의 운을 시험해보세요!</p>
+            <div class="input-group">
+                <input type="text" id="nickname" placeholder="닉네임을 입력하세요" maxlength="20">
+                <button id="start-btn" class="btn btn-primary">시작하기</button>
+            </div>
+
+            <div class="leaderboard">
+                <h3>🏆 TOP 10</h3>
+                <ul id="ranking-list">
+                    <li class="loading">로딩 중...</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 게임 화면 -->
+        <div id="game-screen" class="screen">
+            <div class="game-header">
+                <div class="player-info">
+                    <span id="player-name">플레이어</span>
+                </div>
+                <div class="score-display">
+                    <span class="label">연속 성공</span>
+                    <span id="score" class="score-value">0</span>
+                </div>
+            </div>
+
+            <div class="game-area">
+                <div class="round-info">
+                    <p>0 또는 1 중 하나를 선택하세요!</p>
+                    <p class="hint">컴퓨터가 생각한 숫자와 같으면 성공!</p>
+                </div>
+
+                <div class="combo-display" id="combo-display"></div>
+
+                <div class="choice-buttons">
+                    <button class="choice-btn" id="btn-0" data-choice="0">
+                        <span class="number">0</span>
+                        <span class="label">LEFT</span>
+                    </button>
+                    <button class="choice-btn" id="btn-1" data-choice="1">
+                        <span class="number">1</span>
+                        <span class="label">RIGHT</span>
+                    </button>
+                </div>
+
+                <div class="keyboard-hint">
+                    키보드: ← 또는 A = 0 | → 또는 D = 1
+                </div>
+            </div>
+        </div>
+
+        <!-- 결과 화면 -->
+        <div id="result-screen" class="screen">
+            <div class="result-content">
+                <div class="result-icon" id="result-icon">💔</div>
+                <h2 id="result-title">게임 오버!</h2>
+                <p id="result-message"></p>
+
+                <div class="final-score">
+                    <span class="label">최종 점수</span>
+                    <span id="final-score" class="score-value">0</span>
+                </div>
+
+                <div class="probability-stat" id="probability-stat"></div>
+
+                <div class="result-buttons">
+                    <button id="retry-btn" class="btn btn-primary">다시 도전</button>
+                    <button id="share-btn" class="btn btn-secondary">결과 공유</button>
+                </div>
+
+                <div class="leaderboard result-leaderboard">
+                    <h3>🏆 TOP 10</h3>
+                    <ul id="result-ranking-list"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
