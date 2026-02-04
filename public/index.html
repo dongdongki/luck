@@ -5,6 +5,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>운빨 테스트 | Luck Test</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+        import { getFirestore, collection, doc, getDoc, setDoc, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCGYumcqNoGU5qDY8oaRThCxm8am9QFT7U",
+            authDomain: "luck-9cf68.firebaseapp.com",
+            projectId: "luck-9cf68",
+            storageBucket: "luck-9cf68.firebasestorage.app",
+            messagingSenderId: "975535609399",
+            appId: "1:975535609399:web:b94e1e4a07d75df82391b2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // 전역으로 Firebase 함수 노출
+        window.firebaseDB = {
+            saveScore: async (nickname, score) => {
+                try {
+                    const docRef = doc(db, "scores", nickname);
+                    const docSnap = await getDoc(docRef);
+
+                    // 기존 기록이 없거나, 새 점수가 더 높으면 저장
+                    if (!docSnap.exists() || docSnap.data().score < score) {
+                        await setDoc(docRef, {
+                            nickname: nickname,
+                            score: score,
+                            timestamp: new Date()
+                        });
+                    }
+                } catch (error) {
+                    console.error("점수 저장 실패:", error);
+                }
+            },
+            getScores: async () => {
+                try {
+                    const q = query(collection(db, "scores"), orderBy("score", "desc"), limit(10));
+                    const snapshot = await getDocs(q);
+                    return snapshot.docs.map(doc => doc.data());
+                } catch (error) {
+                    console.error("랭킹 로드 실패:", error);
+                    return [];
+                }
+            },
+            checkNickname: async (nickname) => {
+                try {
+                    const docRef = doc(db, "scores", nickname);
+                    const docSnap = await getDoc(docRef);
+                    return docSnap.exists();
+                } catch (error) {
+                    console.error("닉네임 체크 실패:", error);
+                    return false;
+                }
+            }
+        };
+
+        // Firebase 준비 완료 이벤트
+        window.dispatchEvent(new Event('firebaseReady'));
+    </script>
 </head>
 <body>
     <div class="container">

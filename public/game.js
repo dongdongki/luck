@@ -2,6 +2,7 @@
 let score = 0;
 let nickname = '';
 let isPlaying = false;
+let firebaseReady = false;
 
 // DOM 요소
 const screens = {
@@ -36,8 +37,26 @@ function showScreen(screenName) {
 }
 
 // 게임 시작
-function startGame() {
-    nickname = elements.nicknameInput.value.trim() || '익명의 도전자';
+async function startGame() {
+    const inputNickname = elements.nicknameInput.value.trim();
+
+    if (!inputNickname) {
+        alert('닉네임을 입력해주세요!');
+        elements.nicknameInput.focus();
+        return;
+    }
+
+    // 닉네임 중복 체크
+    if (firebaseReady) {
+        const exists = await window.firebaseDB.checkNickname(inputNickname);
+        if (exists) {
+            alert('이미 사용 중인 닉네임입니다. 다른 닉네임을 입력해주세요.');
+            elements.nicknameInput.focus();
+            return;
+        }
+    }
+
+    nickname = inputNickname;
     score = 0;
     isPlaying = true;
 
@@ -128,8 +147,8 @@ async function endGame() {
     }
 
     // 점수 저장
-    if (score > 0) {
-        await saveScore(nickname, score);
+    if (score > 0 && firebaseReady) {
+        await window.firebaseDB.saveScore(nickname, score);
     }
 
     // 랭킹 업데이트
@@ -138,24 +157,15 @@ async function endGame() {
     showScreen('result');
 }
 
-// 점수 저장
-async function saveScore(name, score) {
-    try {
-        await fetch('/api/scores', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nickname: name, score })
-        });
-    } catch (error) {
-        console.error('점수 저장 실패:', error);
-    }
-}
-
 // 랭킹 로드
 async function loadRanking(listElement) {
+    if (!firebaseReady) {
+        listElement.innerHTML = '<li class="loading">연결 중...</li>';
+        return;
+    }
+
     try {
-        const response = await fetch('/api/scores');
-        const scores = await response.json();
+        const scores = await window.firebaseDB.getScores();
 
         if (scores.length === 0) {
             listElement.innerHTML = '<li class="loading">아직 기록이 없습니다</li>';
@@ -247,5 +257,11 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// 초기화
-loadRanking(elements.rankingList);
+// Firebase 준비 대기
+window.addEventListener('firebaseReady', () => {
+    firebaseReady = true;
+    loadRanking(elements.rankingList);
+});
+
+// 초기 로딩 표시
+elements.rankingList.innerHTML = '<li class="loading">연결 중...</li>';
