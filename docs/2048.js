@@ -425,7 +425,7 @@ function loadRanking(listElement) {
                     <span class="rank-number ${rankClass}">${index + 1}</span>
                     <span class="rank-name">${escapeHtml(entry.nickname)}</span>
                 </div>
-                <span class="rank-score">${entry.maxTile}</span>
+                <span class="rank-score">${entry.maxTile} <small>(${entry.score.toLocaleString()}점)</small></span>
             </li>
         `;
     }).join('');
