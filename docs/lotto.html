@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>오늘의 로또 | 존나실력 게임</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .theme-lotto {
+            --primary: #f59e0b;
+            --primary-dark: #d97706;
+        }
+        .theme-lotto .btn-primary {
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+        }
+        .theme-lotto .score-value,
+        .theme-lotto .rank-score {
+            color: #f59e0b;
+        }
+        .theme-lotto h1 {
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .theme-lotto body::before,
+        .theme-lotto::before {
+            background:
+                radial-gradient(circle at 20% 80%, rgba(245, 158, 11, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(239, 68, 68, 0.1) 0%, transparent 50%);
+        }
+
+        .lotto-info {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .lotto-info .date {
+            font-size: 1.2rem;
+            color: #f59e0b;
+            margin-bottom: 5px;
+        }
+
+        .lotto-info .reset-time {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .number-input-area {
+            margin: 20px 0;
+        }
+
+        .number-grid {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .number-btn {
+            width: 100%;
+            aspect-ratio: 1;
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .number-btn:hover {
+            border-color: #f59e0b;
+            transform: scale(1.1);
+        }
+
+        .number-btn.selected {
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            border-color: #f59e0b;
+            color: white;
+        }
+
+        .number-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .selected-numbers {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+            min-height: 50px;
+            flex-wrap: wrap;
+        }
+
+        .selected-ball {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: white;
+            animation: popIn 0.2s ease;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); }
+            100% { transform: scale(1); }
+        }
+
+        .ball-1-10 { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+        .ball-11-20 { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+        .ball-21-30 { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .ball-31-40 { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+        .ball-41-45 { background: linear-gradient(135deg, #10b981, #059669); }
+
+        .selection-hint {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .draw-btn {
+            padding: 15px 40px;
+            font-size: 1.2rem;
+        }
+
+        .draw-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* 결과 화면 */
+        .winning-numbers {
+            margin: 20px 0;
+        }
+
+        .winning-numbers h3 {
+            margin-bottom: 15px;
+            color: var(--text-secondary);
+        }
+
+        .winning-balls {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .winning-ball {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: white;
+        }
+
+        .bonus-separator {
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            margin: 0 5px;
+        }
+
+        .bonus-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            display: block;
+            margin-top: 5px;
+        }
+
+        .bonus-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .my-numbers {
+            margin: 20px 0;
+            padding: 15px;
+            background: var(--bg-card);
+            border-radius: 12px;
+        }
+
+        .my-numbers h4 {
+            margin-bottom: 10px;
+            color: var(--text-secondary);
+        }
+
+        .match-ball {
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.8);
+            border: 3px solid #10b981;
+        }
+
+        .rank-display {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 20px 0;
+        }
+
+        .rank-1 { color: #fbbf24; }
+        .rank-2 { color: #9ca3af; }
+        .rank-3 { color: #d97706; }
+        .rank-4 { color: #3b82f6; }
+        .rank-5 { color: #10b981; }
+        .rank-none { color: var(--text-secondary); }
+
+        .already-played {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .already-played .icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+
+        .already-played h2 {
+            margin-bottom: 15px;
+        }
+
+        .already-played p {
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .countdown {
+            font-size: 1.5rem;
+            color: #f59e0b;
+            font-weight: 600;
+        }
+
+        @media (max-width: 480px) {
+            .number-grid {
+                grid-template-columns: repeat(7, 1fr);
+                gap: 6px;
+            }
+
+            .number-btn {
+                font-size: 0.8rem;
+            }
+
+            .selected-ball, .winning-ball {
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+        import { getFirestore, collection, doc, getDoc, setDoc, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCGYumcqNoGU5qDY8oaRThCxm8am9QFT7U",
+            authDomain: "luck-9cf68.firebaseapp.com",
+            projectId: "luck-9cf68",
+            storageBucket: "luck-9cf68.firebasestorage.app",
+            messagingSenderId: "975535609399",
+            appId: "1:975535609399:web:b94e1e4a07d75df82391b2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // 오늘 날짜 문자열 (YYYY-MM-DD)
+        function getTodayString() {
+            const now = new Date();
+            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        }
+
+        window.firebaseDB = {
+            // 오늘 당첨번호 가져오기 또는 생성
+            getTodayWinningNumbers: async () => {
+                const today = getTodayString();
+                const docRef = doc(db, "lotto_daily", today);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    return docSnap.data();
+                } else {
+                    // 새로운 당첨번호 생성
+                    const numbers = [];
+                    while (numbers.length < 7) {
+                        const num = Math.floor(Math.random() * 45) + 1;
+                        if (!numbers.includes(num)) {
+                            numbers.push(num);
+                        }
+                    }
+                    const mainNumbers = numbers.slice(0, 6).sort((a, b) => a - b);
+                    const bonusNumber = numbers[6];
+
+                    const data = {
+                        date: today,
+                        numbers: mainNumbers,
+                        bonus: bonusNumber,
+                        createdAt: new Date()
+                    };
+
+                    await setDoc(docRef, data);
+                    return data;
+                }
+            },
+
+            // 오늘 이미 플레이했는지 확인
+            checkTodayPlayed: async (nickname) => {
+                const today = getTodayString();
+                const docRef = doc(db, "lotto_scores", `${nickname}_${today}`);
+                const docSnap = await getDoc(docRef);
+                return docSnap.exists() ? docSnap.data() : null;
+            },
+
+            // 점수 저장
+            saveScore: async (nickname, rank, myNumbers, matchCount) => {
+                const today = getTodayString();
+                const docRef = doc(db, "lotto_scores", `${nickname}_${today}`);
+
+                await setDoc(docRef, {
+                    nickname: nickname,
+                    date: today,
+                    rank: rank,
+                    myNumbers: myNumbers,
+                    matchCount: matchCount,
+                    timestamp: new Date()
+                });
+            },
+
+            // 오늘 랭킹 가져오기
+            getTodayScores: async () => {
+                const today = getTodayString();
+                try {
+                    const q = query(collection(db, "lotto_scores"), limit(100));
+                    const snapshot = await getDocs(q);
+                    const scores = snapshot.docs
+                        .map(doc => doc.data())
+                        .filter(score => score.date === today);
+
+                    // 등수 순 정렬 (1등이 먼저, 장외는 마지막)
+                    return scores.sort((a, b) => {
+                        if (a.rank === 0 && b.rank === 0) return 0;
+                        if (a.rank === 0) return 1;
+                        if (b.rank === 0) return -1;
+                        return a.rank - b.rank;
+                    });
+                } catch (error) {
+                    console.error("랭킹 로드 실패:", error);
+                    return [];
+                }
+            }
+        };
+
+        window.getTodayString = getTodayString;
+        window.dispatchEvent(new Event('firebaseReady'));
+    </script>
+</head>
+<body class="theme-lotto">
+    <div class="container">
+        <!-- 게임 화면 -->
+        <div id="game-screen" class="screen active">
+            <div class="game-header">
+                <div class="player-info">
+                    <a href="games.html" class="back-link">← 게임 선택</a>
+                    <span id="player-name">플레이어</span>
+                </div>
+                <div class="score-display">
+                    <span class="label">선택</span>
+                    <span class="score-value" id="selected-count">0/6</span>
+                </div>
+            </div>
+
+            <div class="lotto-info">
+                <p class="date" id="today-date"></p>
+                <p class="reset-time">매일 자정에 새로운 번호가 추첨됩니다</p>
+            </div>
+
+            <div class="game-area">
+                <p class="selection-hint">1~45 중 6개의 번호를 선택하세요</p>
+
+                <div class="selected-numbers" id="selected-numbers"></div>
+
+                <div class="number-grid" id="number-grid"></div>
+
+                <button class="btn btn-primary draw-btn" id="draw-btn" disabled>추첨하기</button>
+            </div>
+        </div>
+
+        <!-- 이미 플레이한 경우 -->
+        <div id="already-screen" class="screen">
+            <div class="already-played">
+                <div class="icon">🎱</div>
+                <h2>오늘은 이미 참여했어요!</h2>
+                <p>내일 자정에 새로운 추첨이 시작됩니다</p>
+                <p class="countdown" id="countdown"></p>
+
+                <div class="my-numbers">
+                    <h4>오늘 내 번호</h4>
+                    <div class="winning-balls" id="already-my-numbers"></div>
+                </div>
+
+                <div class="rank-display" id="already-rank"></div>
+
+                <div class="result-buttons">
+                    <a href="games.html" class="btn btn-primary">다른 게임 하기</a>
+                </div>
+
+                <div class="leaderboard result-leaderboard" style="margin-top: 20px;">
+                    <h3>🏆 오늘의 랭킹</h3>
+                    <ul id="already-ranking-list"></ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 결과 화면 -->
+        <div id="result-screen" class="screen">
+            <div class="result-content">
+                <div class="result-icon" id="result-icon">🎱</div>
+                <h2 id="result-title">추첨 결과</h2>
+
+                <div class="winning-numbers">
+                    <h3>오늘의 당첨번호</h3>
+                    <div class="winning-balls" id="winning-balls"></div>
+                </div>
+
+                <div class="my-numbers">
+                    <h4>내 번호</h4>
+                    <div class="winning-balls" id="my-balls"></div>
+                </div>
+
+                <div class="rank-display" id="rank-display"></div>
+                <p id="result-message"></p>
+
+                <div class="result-buttons">
+                    <button id="share-btn" class="btn btn-secondary">결과 공유</button>
+                    <a href="games.html" class="btn btn-primary">다른 게임 하기</a>
+                </div>
+
+                <div class="leaderboard result-leaderboard">
+                    <h3>🏆 오늘의 랭킹</h3>
+                    <ul id="result-ranking-list"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="lotto.js"></script>
+</body>
+</html>

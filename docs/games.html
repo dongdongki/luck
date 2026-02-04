@@ -59,6 +59,14 @@
             box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
         }
 
+        .game-card.lotto {
+            border-color: #f59e0b;
+        }
+        .game-card.lotto:hover {
+            border-color: #f59e0b;
+            box-shadow: 0 10px 30px rgba(245, 158, 11, 0.3);
+        }
+
         .welcome-msg {
             color: var(--text-secondary);
             margin-bottom: 10px;
@@ -101,6 +109,12 @@
                     <div class="icon">⏱️</div>
                     <h3>7초 맞추기</h3>
                     <p>눈을 감고 7초를<br>정확히 맞춰보세요!</p>
+                </div>
+
+                <div class="game-card lotto" onclick="location.href='lotto.html'">
+                    <div class="icon">🎱</div>
+                    <h3>오늘의 로또</h3>
+                    <p>매일 바뀌는 당첨번호!<br>오늘의 운을 시험하세요!</p>
                 </div>
             </div>
         </div>
