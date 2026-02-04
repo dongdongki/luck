@@ -288,9 +288,16 @@
             },
             getScores: async () => {
                 try {
-                    const q = query(collection(db, "2048_scores"), orderBy("maxTile", "desc"), orderBy("score", "desc"), limit(100));
+                    // 단일 필드로 먼저 정렬하고, 클라이언트에서 추가 정렬
+                    const q = query(collection(db, "2048_scores"), orderBy("maxTile", "desc"), limit(100));
                     const snapshot = await getDocs(q);
-                    return snapshot.docs.map(doc => doc.data());
+                    const scores = snapshot.docs.map(doc => doc.data());
+                    // maxTile이 같으면 score로 추가 정렬
+                    scores.sort((a, b) => {
+                        if (b.maxTile !== a.maxTile) return b.maxTile - a.maxTile;
+                        return b.score - a.score;
+                    });
+                    return scores;
                 } catch (error) {
                     console.error("랭킹 로드 실패:", error);
                     return [];

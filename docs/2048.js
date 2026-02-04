@@ -555,11 +555,17 @@ window.addEventListener('firebaseReady', async () => {
 
     try {
         allScores = await window.firebaseDB.getScores();
+        console.log('랭킹 로드 완료:', allScores.length, '개');
         loadRanking(elements.gameRankingList);
     } catch (error) {
         console.error('초기화 에러:', error);
     }
 });
+
+// Firebase가 이미 준비되었을 수 있음 (스크립트 로드 순서에 따라)
+if (window.firebaseDB) {
+    window.dispatchEvent(new Event('firebaseReady'));
+}
 
 // 게임 시작
 init();
