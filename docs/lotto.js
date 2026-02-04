@@ -131,9 +131,20 @@ function checkWinning(myNumbers, winningNumbers, bonusNumber) {
 async function doDraw() {
     if (selectedNumbers.length !== 6) return;
 
+    // Firebase가 준비되지 않았으면 대기
+    if (!window.firebaseDB) {
+        console.log('Firebase 로딩 중...');
+        return;
+    }
+
     // winningData가 없으면 가져오기
     if (!winningData) {
-        winningData = await window.firebaseDB.getTodayWinningNumbers();
+        try {
+            winningData = await window.firebaseDB.getTodayWinningNumbers();
+        } catch (error) {
+            console.error('당첨번호 가져오기 실패:', error);
+            return;
+        }
     }
 
     const myNumbers = [...selectedNumbers].sort((a, b) => a - b);
@@ -353,7 +364,18 @@ function copyToClipboard(text) {
 }
 
 // 이벤트 리스너
-elements.drawBtn.addEventListener('click', doDraw);
+elements.drawBtn.addEventListener('click', async () => {
+    elements.drawBtn.disabled = true;
+    elements.drawBtn.textContent = '추첨 중...';
+    try {
+        await doDraw();
+    } catch (error) {
+        console.error('추첨 에러:', error);
+        alert('추첨 중 오류가 발생했습니다. 다시 시도해주세요.');
+        elements.drawBtn.disabled = false;
+        elements.drawBtn.textContent = '추첨하기';
+    }
+});
 elements.shareBtn.addEventListener('click', shareResult);
 
 // 번호판 생성
@@ -362,10 +384,16 @@ createNumberGrid();
 // Firebase 준비 대기
 window.addEventListener('firebaseReady', async () => {
     firebaseReady = true;
+    console.log('Firebase 준비 완료');
 
     // 오늘 당첨번호 가져오기
-    winningData = await window.firebaseDB.getTodayWinningNumbers();
-    allScores = await window.firebaseDB.getTodayScores();
+    try {
+        winningData = await window.firebaseDB.getTodayWinningNumbers();
+        console.log('오늘 당첨번호:', winningData);
+        allScores = await window.firebaseDB.getTodayScores();
+    } catch (error) {
+        console.error('초기화 에러:', error);
+    }
 
     // 이미 오늘 플레이했는지 확인
     const playedData = await window.firebaseDB.checkTodayPlayed(nickname);
