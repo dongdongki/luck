@@ -282,37 +282,44 @@
             return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         }
 
+        // 날짜 기반 시드로 일관된 랜덤 번호 생성 (Firebase 저장 없이)
+        function seededRandom(seed) {
+            const x = Math.sin(seed) * 10000;
+            return x - Math.floor(x);
+        }
+
+        function generateDailyNumbers(dateString) {
+            // 날짜를 숫자로 변환하여 시드로 사용
+            const dateParts = dateString.split('-');
+            const seed = parseInt(dateParts[0]) * 10000 + parseInt(dateParts[1]) * 100 + parseInt(dateParts[2]);
+
+            const numbers = [];
+            let currentSeed = seed;
+
+            while (numbers.length < 7) {
+                currentSeed = currentSeed * 9301 + 49297;
+                const rand = (currentSeed % 233280) / 233280;
+                const num = Math.floor(rand * 45) + 1;
+                if (!numbers.includes(num)) {
+                    numbers.push(num);
+                }
+            }
+
+            const mainNumbers = numbers.slice(0, 6).sort((a, b) => a - b);
+            const bonusNumber = numbers[6];
+
+            return {
+                date: dateString,
+                numbers: mainNumbers,
+                bonus: bonusNumber
+            };
+        }
+
         window.firebaseDB = {
-            // 오늘 당첨번호 가져오기 또는 생성
+            // 오늘 당첨번호 가져오기 (날짜 기반 시드로 생성)
             getTodayWinningNumbers: async () => {
                 const today = getTodayString();
-                const docRef = doc(db, "lotto_daily", today);
-                const docSnap = await getDoc(docRef);
-
-                if (docSnap.exists()) {
-                    return docSnap.data();
-                } else {
-                    // 새로운 당첨번호 생성
-                    const numbers = [];
-                    while (numbers.length < 7) {
-                        const num = Math.floor(Math.random() * 45) + 1;
-                        if (!numbers.includes(num)) {
-                            numbers.push(num);
-                        }
-                    }
-                    const mainNumbers = numbers.slice(0, 6).sort((a, b) => a - b);
-                    const bonusNumber = numbers[6];
-
-                    const data = {
-                        date: today,
-                        numbers: mainNumbers,
-                        bonus: bonusNumber,
-                        createdAt: new Date()
-                    };
-
-                    await setDoc(docRef, data);
-                    return data;
-                }
+                return generateDailyNumbers(today);
             },
 
             // 오늘 이미 플레이했는지 확인

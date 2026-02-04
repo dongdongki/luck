@@ -129,14 +129,23 @@ function checkWinning(myNumbers, winningNumbers, bonusNumber) {
 
 // 추첨 실행
 async function doDraw() {
-    if (!firebaseReady || selectedNumbers.length !== 6) return;
+    if (selectedNumbers.length !== 6) return;
+
+    // winningData가 없으면 가져오기
+    if (!winningData) {
+        winningData = await window.firebaseDB.getTodayWinningNumbers();
+    }
 
     const myNumbers = [...selectedNumbers].sort((a, b) => a - b);
     const result = checkWinning(myNumbers, winningData.numbers, winningData.bonus);
 
-    // 결과 저장
-    await window.firebaseDB.saveScore(nickname, result.rank, myNumbers, result.matchCount);
-    allScores = await window.firebaseDB.getTodayScores();
+    // 결과 저장 (실패해도 결과는 보여줌)
+    try {
+        await window.firebaseDB.saveScore(nickname, result.rank, myNumbers, result.matchCount);
+        allScores = await window.firebaseDB.getTodayScores();
+    } catch (error) {
+        console.error('점수 저장 실패:', error);
+    }
 
     // 결과 화면 표시
     showResult(myNumbers, result);
