@@ -322,24 +322,14 @@
                 return generateDailyNumbers(today);
             },
 
-            // 오늘 이미 플레이했는지 확인 (localStorage + Firebase)
+            // 오늘 이미 플레이했는지 확인 (Firebase만 사용)
             checkTodayPlayed: async (nickname) => {
                 const today = getTodayString();
 
-                // 먼저 localStorage 확인
-                const localKey = `lotto_played_${nickname}_${today}`;
-                const localData = localStorage.getItem(localKey);
-                if (localData) {
-                    return JSON.parse(localData);
-                }
-
-                // Firebase에서도 확인
                 try {
                     const docRef = doc(db, "lotto_scores", `${nickname}_${today}`);
                     const docSnap = await getDoc(docRef);
                     if (docSnap.exists()) {
-                        // localStorage에도 저장
-                        localStorage.setItem(localKey, JSON.stringify(docSnap.data()));
                         return docSnap.data();
                     }
                 } catch (error) {
@@ -348,7 +338,7 @@
                 return null;
             },
 
-            // 점수 저장 (localStorage + Firebase)
+            // 점수 저장 (Firebase만 사용)
             saveScore: async (nickname, rank, myNumbers, matchCount) => {
                 const today = getTodayString();
                 const data = {
@@ -360,16 +350,13 @@
                     timestamp: new Date().toISOString()
                 };
 
-                // localStorage에 먼저 저장 (항상 성공)
-                const localKey = `lotto_played_${nickname}_${today}`;
-                localStorage.setItem(localKey, JSON.stringify(data));
-
-                // Firebase에도 저장 시도
+                // Firebase에 저장
                 try {
                     const docRef = doc(db, "lotto_scores", `${nickname}_${today}`);
                     await setDoc(docRef, data);
                 } catch (error) {
                     console.error('Firebase 저장 실패:', error);
+                    throw error; // 에러를 throw하여 저장 실패를 알림
                 }
             },
 
