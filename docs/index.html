@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>운빨 게임즈 | Luck Games</title>
+    <title>존나실력 게임 | Luck Games</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
         <div class="screen active">
             <div class="logo">🎮</div>
-            <h1>운빨 게임즈</h1>
-            <p class="subtitle">다양한 운빨 게임에 도전하세요!</p>
+            <h1>존나실력 게임</h1>
+            <p class="subtitle">다양한 실력 게임에 도전하세요!</p>
             <div class="input-group">
                 <input type="text" id="nickname" placeholder="닉네임을 입력하세요" maxlength="20">
                 <button id="start-btn" class="btn btn-primary">입장하기</button>
@@ -47,6 +47,21 @@
             nicknameInput.value = savedNickname;
         }
 
+        // 사용했던 닉네임 목록 불러오기
+        function getUsedNicknames() {
+            const stored = localStorage.getItem('luckGameUsedNicknames');
+            return stored ? JSON.parse(stored) : [];
+        }
+
+        // 닉네임을 사용 목록에 추가
+        function addUsedNickname(nickname) {
+            const usedNicknames = getUsedNicknames();
+            if (!usedNicknames.includes(nickname)) {
+                usedNicknames.push(nickname);
+                localStorage.setItem('luckGameUsedNicknames', JSON.stringify(usedNicknames));
+            }
+        }
+
         async function checkAndProceed() {
             const nickname = nicknameInput.value.trim();
 
@@ -57,8 +72,11 @@
                 return;
             }
 
-            // 저장된 닉네임과 다르면 중복 체크
-            if (nickname !== savedNickname) {
+            // 이전에 사용한 닉네임이면 중복 체크 건너뛰기
+            const usedNicknames = getUsedNicknames();
+            const isMyNickname = usedNicknames.includes(nickname);
+
+            if (!isMyNickname) {
                 try {
                     // luck_scores와 timer_scores 모두 체크
                     const luckDoc = await getDoc(doc(db, "luck_scores", nickname));
@@ -75,8 +93,9 @@
                 }
             }
 
-            // 닉네임 저장 및 게임 선택 페이지로 이동
+            // 닉네임 저장 및 사용 목록에 추가
             localStorage.setItem('luckGameNickname', nickname);
+            addUsedNickname(nickname);
             window.location.href = 'games.html';
         }
 
