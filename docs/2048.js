@@ -507,6 +507,10 @@ function setupEventListeners() {
 
     // 게임 영역 터치 시작
     gameContainer.addEventListener('touchstart', (e) => {
+        // 게임 메시지(버튼 영역)에서는 터치 이벤트 처리 안함
+        if (e.target.closest('.game-message') || e.target.closest('button') || e.target.closest('a')) {
+            return;
+        }
         isTouchingGame = true;
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
