@@ -506,7 +506,12 @@ function setupEventListeners() {
     gameContainer.addEventListener('touchstart', (e) => {
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
-    }, { passive: true });
+    }, { passive: false });
+
+    gameContainer.addEventListener('touchmove', (e) => {
+        // 게임 컨테이너 내에서는 스크롤 방지
+        e.preventDefault();
+    }, { passive: false });
 
     gameContainer.addEventListener('touchend', (e) => {
         if (!touchStartX || !touchStartY) return;
