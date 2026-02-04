@@ -39,6 +39,7 @@ function showScreen(screenName) {
 // 게임 시작
 async function startGame() {
     const inputNickname = elements.nicknameInput.value.trim();
+    const savedNickname = localStorage.getItem('luckGameNickname');
 
     if (!inputNickname) {
         alert('닉네임을 입력해주세요!');
@@ -46,8 +47,8 @@ async function startGame() {
         return;
     }
 
-    // 닉네임 중복 체크
-    if (firebaseReady) {
+    // 닉네임 중복 체크 (저장된 닉네임과 같으면 본인이므로 통과)
+    if (firebaseReady && inputNickname !== savedNickname) {
         const exists = await window.firebaseDB.checkNickname(inputNickname);
         if (exists) {
             alert('이미 사용 중인 닉네임입니다. 다른 닉네임을 입력해주세요.');
@@ -56,6 +57,8 @@ async function startGame() {
         }
     }
 
+    // 닉네임 저장
+    localStorage.setItem('luckGameNickname', inputNickname);
     nickname = inputNickname;
     score = 0;
     isPlaying = true;
@@ -265,3 +268,9 @@ window.addEventListener('firebaseReady', () => {
 
 // 초기 로딩 표시
 elements.rankingList.innerHTML = '<li class="loading">연결 중...</li>';
+
+// 저장된 닉네임 불러오기
+const savedNickname = localStorage.getItem('luckGameNickname');
+if (savedNickname) {
+    elements.nicknameInput.value = savedNickname;
+}
