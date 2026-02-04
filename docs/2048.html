@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>2048 | 존나실력 게임</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .theme-2048 {
+            --primary: #edc22e;
+            --primary-dark: #d4a827;
+        }
+        .theme-2048 .btn-primary {
+            background: linear-gradient(135deg, #edc22e, #f59e0b);
+        }
+        .theme-2048 .score-value,
+        .theme-2048 .rank-score {
+            color: #edc22e;
+        }
+        .theme-2048 h1 {
+            background: linear-gradient(135deg, #edc22e, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .theme-2048::before {
+            background:
+                radial-gradient(circle at 20% 80%, rgba(237, 194, 46, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(245, 158, 11, 0.1) 0%, transparent 50%);
+        }
+
+        /* 점수 섹션 */
+        .score-section {
+            display: flex;
+            gap: 10px;
+        }
+
+        .score-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 12px;
+            text-align: center;
+            min-width: 60px;
+        }
+
+        .score-box .label {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .score-box .score-value {
+            font-size: 1.1rem;
+        }
+
+        /* 게임 컨테이너 */
+        .game-container {
+            position: relative;
+            background: #0f172a;
+            border-radius: 12px;
+            padding: 10px;
+            touch-action: none;
+            margin: 0 auto;
+            max-width: 350px;
+        }
+
+        .grid-background {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .grid-cell {
+            aspect-ratio: 1;
+            background: #1e293b;
+            border-radius: 8px;
+        }
+
+        .tile-container {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+        }
+
+        /* 타일 스타일 */
+        .tile {
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.8rem;
+            font-weight: 700;
+            border-radius: 8px;
+            width: calc((100% - 24px) / 4);
+            aspect-ratio: 1;
+            transition: transform 0.12s ease-in-out;
+            transform: translate(
+                calc(var(--col) * (100% + 8px)),
+                calc(var(--row) * (100% + 8px))
+            );
+        }
+
+        .tile-new {
+            animation: appear 0.2s ease;
+        }
+
+        .tile-merged {
+            animation: pop 0.2s ease;
+        }
+
+        @keyframes appear {
+            0% {
+                opacity: 0;
+                transform: translate(
+                    calc(var(--col) * (100% + 8px)),
+                    calc(var(--row) * (100% + 8px))
+                ) scale(0);
+            }
+            100% {
+                opacity: 1;
+                transform: translate(
+                    calc(var(--col) * (100% + 8px)),
+                    calc(var(--row) * (100% + 8px))
+                ) scale(1);
+            }
+        }
+
+        @keyframes pop {
+            0% {
+                transform: translate(
+                    calc(var(--col) * (100% + 8px)),
+                    calc(var(--row) * (100% + 8px))
+                ) scale(1);
+            }
+            50% {
+                transform: translate(
+                    calc(var(--col) * (100% + 8px)),
+                    calc(var(--row) * (100% + 8px))
+                ) scale(1.15);
+            }
+            100% {
+                transform: translate(
+                    calc(var(--col) * (100% + 8px)),
+                    calc(var(--row) * (100% + 8px))
+                ) scale(1);
+            }
+        }
+
+        /* 타일 색상 */
+        .tile-2 { background: #eee4da; color: #776e65; }
+        .tile-4 { background: #ede0c8; color: #776e65; }
+        .tile-8 { background: #f2b179; color: #f9f6f2; }
+        .tile-16 { background: #f59563; color: #f9f6f2; }
+        .tile-32 { background: #f67c5f; color: #f9f6f2; }
+        .tile-64 { background: #f65e3b; color: #f9f6f2; }
+        .tile-128 { background: #edcf72; color: #f9f6f2; font-size: 1.5rem; }
+        .tile-256 { background: #edcc61; color: #f9f6f2; font-size: 1.5rem; }
+        .tile-512 { background: #edc850; color: #f9f6f2; font-size: 1.5rem; }
+        .tile-1024 { background: #edc53f; color: #f9f6f2; font-size: 1.2rem; }
+        .tile-2048 { background: #edc22e; color: #f9f6f2; font-size: 1.2rem; box-shadow: 0 0 30px 10px rgba(243, 215, 116, 0.4); }
+        .tile-4096 { background: #3c3a32; color: #f9f6f2; font-size: 1.2rem; }
+        .tile-8192 { background: #3c3a32; color: #f9f6f2; font-size: 1.2rem; }
+
+        /* 게임 메시지 */
+        .game-message {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.9);
+            border-radius: 12px;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        .game-message.active {
+            display: flex;
+        }
+
+        .game-message p {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        /* 결과 화면 스탯 */
+        .result-stats {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px 25px;
+            text-align: center;
+        }
+
+        .stat-item .label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* 반응형 */
+        @media (max-width: 400px) {
+            .game-container {
+                padding: 8px;
+            }
+
+            .grid-background {
+                gap: 6px;
+            }
+
+            .tile {
+                font-size: 1.5rem;
+                width: calc((100% - 18px) / 4);
+                transform: translate(
+                    calc(var(--col) * (100% + 6px)),
+                    calc(var(--row) * (100% + 6px))
+                );
+            }
+
+            .tile-128, .tile-256, .tile-512 { font-size: 1.2rem; }
+            .tile-1024, .tile-2048, .tile-4096, .tile-8192 { font-size: 1rem; }
+
+            .result-stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+        import { getFirestore, collection, doc, getDoc, setDoc, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCGYumcqNoGU5qDY8oaRThCxm8am9QFT7U",
+            authDomain: "luck-9cf68.firebaseapp.com",
+            projectId: "luck-9cf68",
+            storageBucket: "luck-9cf68.firebasestorage.app",
+            messagingSenderId: "975535609399",
+            appId: "1:975535609399:web:b94e1e4a07d75df82391b2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.firebaseDB = {
+            saveScore: async (nickname, maxTile, score) => {
+                try {
+                    const docRef = doc(db, "2048_scores", nickname);
+                    const docSnap = await getDoc(docRef);
+
+                    // 최고 타일이 더 높거나, 같으면 점수가 더 높을 때 저장
+                    if (!docSnap.exists() ||
+                        docSnap.data().maxTile < maxTile ||
+                        (docSnap.data().maxTile === maxTile && docSnap.data().score < score)) {
+                        await setDoc(docRef, {
+                            nickname: nickname,
+                            maxTile: maxTile,
+                            score: score,
+                            timestamp: new Date()
+                        });
+                    }
+                } catch (error) {
+                    console.error("점수 저장 실패:", error);
+                }
+            },
+            getScores: async () => {
+                try {
+                    const q = query(collection(db, "2048_scores"), orderBy("maxTile", "desc"), orderBy("score", "desc"), limit(100));
+                    const snapshot = await getDocs(q);
+                    return snapshot.docs.map(doc => doc.data());
+                } catch (error) {
+                    console.error("랭킹 로드 실패:", error);
+                    return [];
+                }
+            }
+        };
+
+        window.dispatchEvent(new Event('firebaseReady'));
+    </script>
+</head>
+<body class="theme-2048">
+    <div class="container">
+        <!-- 게임 화면 -->
+        <div id="game-screen" class="screen active">
+            <div class="game-header">
+                <div class="player-info">
+                    <a href="games.html" class="back-link">← 게임 선택</a>
+                    <span id="player-name">플레이어</span>
+                </div>
+                <div class="score-section">
+                    <div class="score-box">
+                        <span class="label">점수</span>
+                        <span class="score-value" id="current-score">0</span>
+                    </div>
+                    <div class="score-box">
+                        <span class="label">최고</span>
+                        <span class="score-value" id="best-score">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="game-area">
+                <div class="game-container">
+                    <div class="grid-background">
+                        <div class="grid-cell"></div>
+                        <div class="grid-cell"></div>
+                        <div class="grid-cell"></div>
+                        <div class="grid-cell"></div>
+                        <div class="grid-cell"></div>
+                        <div class="grid-cell"></div>
+                        <div class="grid-cell"></div>
+                        <div class="grid-cell"></div>
+                        <div class="grid-cell"></div>
+                        <div class="grid-cell"></div>
+                        <div class="grid-cell"></div>
+                        <div class="grid-cell"></div>
+                        <div class="grid-cell"></div>
+                        <div class="grid-cell"></div>
+                        <div class="grid-cell"></div>
+                        <div class="grid-cell"></div>
+                    </div>
+                    <div class="tile-container" id="tile-container"></div>
+                    <div class="game-message" id="game-message">
+                        <p id="message-text"></p>
+                        <button class="btn btn-primary" id="retry-btn">다시 하기</button>
+                    </div>
+                </div>
+
+                <div class="keyboard-hint">
+                    방향키 또는 WASD로 조작 | 스마트폰: 스와이프
+                </div>
+
+                <button class="btn btn-secondary" id="new-game-btn" style="margin-top: 15px;">새 게임</button>
+
+                <div class="leaderboard" style="margin-top: 20px;">
+                    <h3>🏆 TOP 10 (최고 타일)</h3>
+                    <ul id="game-ranking-list"></ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 결과 화면 -->
+        <div id="result-screen" class="screen">
+            <div class="result-content">
+                <div class="result-icon" id="result-icon">🎮</div>
+                <h2 id="result-title">게임 오버</h2>
+                <p id="result-message"></p>
+
+                <div class="result-stats">
+                    <div class="stat-item">
+                        <span class="label">최종 점수</span>
+                        <span class="stat-value" id="final-score">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="label">최고 타일</span>
+                        <span class="stat-value" id="max-tile">0</span>
+                    </div>
+                </div>
+
+                <div class="result-buttons">
+                    <button class="btn btn-primary" id="result-retry-btn">다시 도전</button>
+                    <button class="btn btn-secondary" id="share-btn">결과 공유</button>
+                    <a href="games.html" class="btn btn-secondary">다른 게임 하기</a>
+                </div>
+
+                <div class="leaderboard result-leaderboard">
+                    <h3>🏆 TOP 10 (최고 타일)</h3>
+                    <ul id="result-ranking-list"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="2048.js"></script>
+</body>
+</html>

@@ -67,6 +67,14 @@
             box-shadow: 0 10px 30px rgba(245, 158, 11, 0.3);
         }
 
+        .game-card.game-2048 {
+            border-color: #edc22e;
+        }
+        .game-card.game-2048:hover {
+            border-color: #edc22e;
+            box-shadow: 0 10px 30px rgba(237, 194, 46, 0.3);
+        }
+
         .welcome-msg {
             color: var(--text-secondary);
             margin-bottom: 10px;
@@ -115,6 +123,12 @@
                     <div class="icon">🎱</div>
                     <h3>오늘의 로또</h3>
                     <p>매일 바뀌는 당첨번호!<br>오늘의 운을 시험하세요!</p>
+                </div>
+
+                <div class="game-card game-2048" onclick="location.href='2048.html'">
+                    <div class="icon">🧩</div>
+                    <h3>2048</h3>
+                    <p>같은 숫자를 합쳐서<br>2048을 만들어보세요!</p>
                 </div>
             </div>
         </div>
