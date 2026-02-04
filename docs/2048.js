@@ -502,19 +502,34 @@ function setupEventListeners() {
 
     // 터치 이벤트 (스마트폰용)
     const gameContainer = document.querySelector('.game-container');
+    const gameArea = document.querySelector('.game-area');
+    let isTouchingGame = false;
 
+    // 게임 영역 터치 시작
     gameContainer.addEventListener('touchstart', (e) => {
+        isTouchingGame = true;
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
-    }, { passive: false });
-
-    gameContainer.addEventListener('touchmove', (e) => {
-        // 게임 컨테이너 내에서는 스크롤 방지
         e.preventDefault();
     }, { passive: false });
 
+    // 게임 영역 터치 이동 - 스크롤 방지
+    gameContainer.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+    }, { passive: false });
+
+    // document 레벨에서도 게임 터치 중이면 스크롤 방지
+    document.addEventListener('touchmove', (e) => {
+        if (isTouchingGame) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+
     gameContainer.addEventListener('touchend', (e) => {
-        if (!touchStartX || !touchStartY) return;
+        if (!touchStartX || !touchStartY) {
+            isTouchingGame = false;
+            return;
+        }
 
         const touchEndX = e.changedTouches[0].clientX;
         const touchEndY = e.changedTouches[0].clientY;
@@ -536,6 +551,11 @@ function setupEventListeners() {
 
         touchStartX = 0;
         touchStartY = 0;
+        isTouchingGame = false;
+    }, { passive: true });
+
+    document.addEventListener('touchend', () => {
+        isTouchingGame = false;
     }, { passive: true });
 
     // 버튼 이벤트
