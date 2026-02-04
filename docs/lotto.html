@@ -322,27 +322,55 @@
                 return generateDailyNumbers(today);
             },
 
-            // 오늘 이미 플레이했는지 확인
+            // 오늘 이미 플레이했는지 확인 (localStorage + Firebase)
             checkTodayPlayed: async (nickname) => {
                 const today = getTodayString();
-                const docRef = doc(db, "lotto_scores", `${nickname}_${today}`);
-                const docSnap = await getDoc(docRef);
-                return docSnap.exists() ? docSnap.data() : null;
+
+                // 먼저 localStorage 확인
+                const localKey = `lotto_played_${nickname}_${today}`;
+                const localData = localStorage.getItem(localKey);
+                if (localData) {
+                    return JSON.parse(localData);
+                }
+
+                // Firebase에서도 확인
+                try {
+                    const docRef = doc(db, "lotto_scores", `${nickname}_${today}`);
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                        // localStorage에도 저장
+                        localStorage.setItem(localKey, JSON.stringify(docSnap.data()));
+                        return docSnap.data();
+                    }
+                } catch (error) {
+                    console.error('플레이 기록 확인 실패:', error);
+                }
+                return null;
             },
 
-            // 점수 저장
+            // 점수 저장 (localStorage + Firebase)
             saveScore: async (nickname, rank, myNumbers, matchCount) => {
                 const today = getTodayString();
-                const docRef = doc(db, "lotto_scores", `${nickname}_${today}`);
-
-                await setDoc(docRef, {
+                const data = {
                     nickname: nickname,
                     date: today,
                     rank: rank,
                     myNumbers: myNumbers,
                     matchCount: matchCount,
-                    timestamp: new Date()
-                });
+                    timestamp: new Date().toISOString()
+                };
+
+                // localStorage에 먼저 저장 (항상 성공)
+                const localKey = `lotto_played_${nickname}_${today}`;
+                localStorage.setItem(localKey, JSON.stringify(data));
+
+                // Firebase에도 저장 시도
+                try {
+                    const docRef = doc(db, "lotto_scores", `${nickname}_${today}`);
+                    await setDoc(docRef, data);
+                } catch (error) {
+                    console.error('Firebase 저장 실패:', error);
+                }
             },
 
             // 오늘 랭킹 가져오기
