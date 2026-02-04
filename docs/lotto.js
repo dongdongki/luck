@@ -38,7 +38,9 @@ const elements = {
     countdown: document.getElementById('countdown'),
     alreadyMyNumbers: document.getElementById('already-my-numbers'),
     alreadyRank: document.getElementById('already-rank'),
-    alreadyRankingList: document.getElementById('already-ranking-list')
+    alreadyRankingList: document.getElementById('already-ranking-list'),
+    // 게임 화면 랭킹
+    gameRankingList: document.getElementById('game-ranking-list')
 };
 
 // 플레이어 이름 표시
@@ -391,6 +393,8 @@ window.addEventListener('firebaseReady', async () => {
         winningData = await window.firebaseDB.getTodayWinningNumbers();
         console.log('오늘 당첨번호:', winningData);
         allScores = await window.firebaseDB.getTodayScores();
+        // 게임 화면에도 랭킹 표시
+        await loadRanking(elements.gameRankingList);
     } catch (error) {
         console.error('초기화 에러:', error);
     }

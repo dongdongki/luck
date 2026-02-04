@@ -30,7 +30,8 @@ const elements = {
     probabilityStat: document.getElementById('probability-stat'),
     retryBtn: document.getElementById('retry-btn'),
     shareBtn: document.getElementById('share-btn'),
-    resultRankingList: document.getElementById('result-ranking-list')
+    resultRankingList: document.getElementById('result-ranking-list'),
+    gameRankingList: document.getElementById('game-ranking-list')
 };
 
 // 플레이어 이름 표시
@@ -247,4 +248,6 @@ document.addEventListener('keydown', (e) => {
 window.addEventListener('firebaseReady', async () => {
     firebaseReady = true;
     allScores = await window.firebaseDB.getScores();
+    // 게임 화면에도 랭킹 표시
+    await loadRanking(elements.gameRankingList);
 });
