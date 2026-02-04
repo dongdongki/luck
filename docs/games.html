@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>게임 선택 | 운빨 게임즈</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .game-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .game-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.2);
+        }
+
+        .game-card .icon {
+            font-size: 50px;
+            margin-bottom: 15px;
+        }
+
+        .game-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+        }
+
+        .game-card p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .game-card.luck {
+            border-color: #6366f1;
+        }
+        .game-card.luck:hover {
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+        }
+
+        .game-card.timer {
+            border-color: #10b981;
+        }
+        .game-card.timer:hover {
+            border-color: #10b981;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+        }
+
+        .welcome-msg {
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .nickname-display {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+
+        .change-nickname {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .change-nickname:hover {
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="screen active">
+            <div class="logo">🎮</div>
+            <p class="welcome-msg">환영합니다!</p>
+            <p class="nickname-display" id="nickname-display"></p>
+            <span class="change-nickname" id="change-nickname">닉네임 변경</span>
+
+            <div class="game-grid">
+                <div class="game-card luck" onclick="location.href='luck.html'">
+                    <div class="icon">🍀</div>
+                    <h3>운빨 테스트</h3>
+                    <p>0과 1 중 선택해서<br>연속으로 맞춰보세요!</p>
+                </div>
+
+                <div class="game-card timer" onclick="location.href='timer.html'">
+                    <div class="icon">⏱️</div>
+                    <h3>7초 맞추기</h3>
+                    <p>눈을 감고 7초를<br>정확히 맞춰보세요!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const nickname = localStorage.getItem('luckGameNickname');
+
+        // 닉네임 없으면 메인으로 리다이렉트
+        if (!nickname) {
+            window.location.href = 'index.html';
+        } else {
+            document.getElementById('nickname-display').textContent = nickname;
+        }
+
+        document.getElementById('change-nickname').addEventListener('click', () => {
+            localStorage.removeItem('luckGameNickname');
+            window.location.href = 'index.html';
+        });
+    </script>
+</body>
+</html>

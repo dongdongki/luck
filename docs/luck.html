@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>운빨 테스트 | 운빨 게임즈</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+        import { getFirestore, collection, doc, getDoc, setDoc, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCGYumcqNoGU5qDY8oaRThCxm8am9QFT7U",
+            authDomain: "luck-9cf68.firebaseapp.com",
+            projectId: "luck-9cf68",
+            storageBucket: "luck-9cf68.firebasestorage.app",
+            messagingSenderId: "975535609399",
+            appId: "1:975535609399:web:b94e1e4a07d75df82391b2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.firebaseDB = {
+            saveScore: async (nickname, score) => {
+                try {
+                    const docRef = doc(db, "luck_scores", nickname);
+                    const docSnap = await getDoc(docRef);
+
+                    if (!docSnap.exists() || docSnap.data().score < score) {
+                        await setDoc(docRef, {
+                            nickname: nickname,
+                            score: score,
+                            timestamp: new Date()
+                        });
+                    }
+                } catch (error) {
+                    console.error("점수 저장 실패:", error);
+                }
+            },
+            getScores: async () => {
+                try {
+                    const q = query(collection(db, "luck_scores"), orderBy("score", "desc"), limit(100));
+                    const snapshot = await getDocs(q);
+                    return snapshot.docs.map(doc => doc.data());
+                } catch (error) {
+                    console.error("랭킹 로드 실패:", error);
+                    return [];
+                }
+            }
+        };
+
+        window.dispatchEvent(new Event('firebaseReady'));
+    </script>
+</head>
+<body class="theme-luck">
+    <div class="container">
+        <!-- 게임 화면 -->
+        <div id="game-screen" class="screen active">
+            <div class="game-header">
+                <div class="player-info">
+                    <a href="games.html" class="back-link">← 게임 선택</a>
+                    <span id="player-name">플레이어</span>
+                </div>
+                <div class="score-display">
+                    <span class="label">연속 성공</span>
+                    <span id="score" class="score-value">0</span>
+                </div>
+            </div>
+
+            <div class="game-area">
+                <div class="round-info">
+                    <p>0 또는 1 중 하나를 선택하세요!</p>
+                    <p class="hint">컴퓨터가 생각한 숫자와 같으면 성공!</p>
+                </div>
+
+                <div class="combo-display" id="combo-display"></div>
+
+                <div class="choice-buttons">
+                    <button class="choice-btn" id="btn-0" data-choice="0">
+                        <span class="number">0</span>
+                        <span class="label">LEFT</span>
+                    </button>
+                    <button class="choice-btn" id="btn-1" data-choice="1">
+                        <span class="number">1</span>
+                        <span class="label">RIGHT</span>
+                    </button>
+                </div>
+
+                <div class="keyboard-hint">
+                    키보드: ← 또는 A = 0 | → 또는 D = 1
+                </div>
+            </div>
+        </div>
+
+        <!-- 결과 화면 -->
+        <div id="result-screen" class="screen">
+            <div class="result-content">
+                <div class="result-icon" id="result-icon">💔</div>
+                <h2 id="result-title">게임 오버!</h2>
+                <p id="result-message"></p>
+
+                <div class="final-score">
+                    <span class="label">최종 점수</span>
+                    <span id="final-score" class="score-value">0</span>
+                </div>
+
+                <div class="probability-stat" id="probability-stat"></div>
+
+                <div class="result-buttons">
+                    <button id="retry-btn" class="btn btn-primary">다시 도전</button>
+                    <button id="share-btn" class="btn btn-secondary">결과 공유</button>
+                </div>
+
+                <div class="leaderboard result-leaderboard">
+                    <h3>🏆 TOP 10</h3>
+                    <ul id="result-ranking-list"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="luck.js"></script>
+</body>
+</html>

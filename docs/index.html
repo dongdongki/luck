@@ -3,12 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>운빨 테스트 | Luck Test</title>
+    <title>운빨 게임즈 | Luck Games</title>
     <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="screen active">
+            <div class="logo">🎮</div>
+            <h1>운빨 게임즈</h1>
+            <p class="subtitle">다양한 운빨 게임에 도전하세요!</p>
+            <div class="input-group">
+                <input type="text" id="nickname" placeholder="닉네임을 입력하세요" maxlength="20">
+                <button id="start-btn" class="btn btn-primary">입장하기</button>
+            </div>
+            <p class="hint" id="error-msg" style="color: #ef4444; display: none;"></p>
+        </div>
+    </div>
+
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-        import { getFirestore, collection, doc, getDoc, setDoc, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCGYumcqNoGU5qDY8oaRThCxm8am9QFT7U",
@@ -22,135 +37,56 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // 전역으로 Firebase 함수 노출
-        window.firebaseDB = {
-            saveScore: async (nickname, score) => {
-                try {
-                    const docRef = doc(db, "scores", nickname);
-                    const docSnap = await getDoc(docRef);
+        const nicknameInput = document.getElementById('nickname');
+        const startBtn = document.getElementById('start-btn');
+        const errorMsg = document.getElementById('error-msg');
 
-                    // 기존 기록이 없거나, 새 점수가 더 높으면 저장
-                    if (!docSnap.exists() || docSnap.data().score < score) {
-                        await setDoc(docRef, {
-                            nickname: nickname,
-                            score: score,
-                            timestamp: new Date()
-                        });
+        // 저장된 닉네임 불러오기
+        const savedNickname = localStorage.getItem('luckGameNickname');
+        if (savedNickname) {
+            nicknameInput.value = savedNickname;
+        }
+
+        async function checkAndProceed() {
+            const nickname = nicknameInput.value.trim();
+
+            if (!nickname) {
+                errorMsg.textContent = '닉네임을 입력해주세요!';
+                errorMsg.style.display = 'block';
+                nicknameInput.focus();
+                return;
+            }
+
+            // 저장된 닉네임과 다르면 중복 체크
+            if (nickname !== savedNickname) {
+                try {
+                    // luck_scores와 timer_scores 모두 체크
+                    const luckDoc = await getDoc(doc(db, "luck_scores", nickname));
+                    const timerDoc = await getDoc(doc(db, "timer_scores", nickname));
+
+                    if (luckDoc.exists() || timerDoc.exists()) {
+                        errorMsg.textContent = '이미 사용 중인 닉네임입니다.';
+                        errorMsg.style.display = 'block';
+                        nicknameInput.focus();
+                        return;
                     }
                 } catch (error) {
-                    console.error("점수 저장 실패:", error);
-                }
-            },
-            getScores: async () => {
-                try {
-                    const q = query(collection(db, "scores"), orderBy("score", "desc"), limit(10));
-                    const snapshot = await getDocs(q);
-                    return snapshot.docs.map(doc => doc.data());
-                } catch (error) {
-                    console.error("랭킹 로드 실패:", error);
-                    return [];
-                }
-            },
-            checkNickname: async (nickname) => {
-                try {
-                    const docRef = doc(db, "scores", nickname);
-                    const docSnap = await getDoc(docRef);
-                    return docSnap.exists();
-                } catch (error) {
-                    console.error("닉네임 체크 실패:", error);
-                    return false;
+                    console.error('닉네임 체크 실패:', error);
                 }
             }
-        };
 
-        // Firebase 준비 완료 이벤트
-        window.dispatchEvent(new Event('firebaseReady'));
+            // 닉네임 저장 및 게임 선택 페이지로 이동
+            localStorage.setItem('luckGameNickname', nickname);
+            window.location.href = 'games.html';
+        }
+
+        startBtn.addEventListener('click', checkAndProceed);
+        nicknameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') checkAndProceed();
+        });
+        nicknameInput.addEventListener('input', () => {
+            errorMsg.style.display = 'none';
+        });
     </script>
-</head>
-<body>
-    <div class="container">
-        <!-- 시작 화면 -->
-        <div id="start-screen" class="screen active">
-            <div class="logo">🍀</div>
-            <h1>운빨 테스트</h1>
-            <p class="subtitle">당신의 운을 시험해보세요!</p>
-            <div class="input-group">
-                <input type="text" id="nickname" placeholder="닉네임을 입력하세요" maxlength="20">
-                <button id="start-btn" class="btn btn-primary">시작하기</button>
-            </div>
-
-            <div class="leaderboard">
-                <h3>🏆 TOP 10</h3>
-                <ul id="ranking-list">
-                    <li class="loading">로딩 중...</li>
-                </ul>
-            </div>
-        </div>
-
-        <!-- 게임 화면 -->
-        <div id="game-screen" class="screen">
-            <div class="game-header">
-                <div class="player-info">
-                    <span id="player-name">플레이어</span>
-                </div>
-                <div class="score-display">
-                    <span class="label">연속 성공</span>
-                    <span id="score" class="score-value">0</span>
-                </div>
-            </div>
-
-            <div class="game-area">
-                <div class="round-info">
-                    <p>0 또는 1 중 하나를 선택하세요!</p>
-                    <p class="hint">컴퓨터가 생각한 숫자와 같으면 성공!</p>
-                </div>
-
-                <div class="combo-display" id="combo-display"></div>
-
-                <div class="choice-buttons">
-                    <button class="choice-btn" id="btn-0" data-choice="0">
-                        <span class="number">0</span>
-                        <span class="label">LEFT</span>
-                    </button>
-                    <button class="choice-btn" id="btn-1" data-choice="1">
-                        <span class="number">1</span>
-                        <span class="label">RIGHT</span>
-                    </button>
-                </div>
-
-                <div class="keyboard-hint">
-                    키보드: ← 또는 A = 0 | → 또는 D = 1
-                </div>
-            </div>
-        </div>
-
-        <!-- 결과 화면 -->
-        <div id="result-screen" class="screen">
-            <div class="result-content">
-                <div class="result-icon" id="result-icon">💔</div>
-                <h2 id="result-title">게임 오버!</h2>
-                <p id="result-message"></p>
-
-                <div class="final-score">
-                    <span class="label">최종 점수</span>
-                    <span id="final-score" class="score-value">0</span>
-                </div>
-
-                <div class="probability-stat" id="probability-stat"></div>
-
-                <div class="result-buttons">
-                    <button id="retry-btn" class="btn btn-primary">다시 도전</button>
-                    <button id="share-btn" class="btn btn-secondary">결과 공유</button>
-                </div>
-
-                <div class="leaderboard result-leaderboard">
-                    <h3>🏆 TOP 10</h3>
-                    <ul id="result-ranking-list"></ul>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="game.js"></script>
 </body>
 </html>

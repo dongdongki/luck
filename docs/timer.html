@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>7초 맞추기 | 운빨 게임즈</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .theme-timer {
+            --primary: #10b981;
+            --primary-dark: #059669;
+        }
+        .theme-timer .btn-primary {
+            background: linear-gradient(135deg, #10b981, #06b6d4);
+        }
+        .theme-timer .score-value,
+        .theme-timer .rank-score {
+            color: #10b981;
+        }
+        .theme-timer h1 {
+            background: linear-gradient(135deg, #10b981, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .theme-timer body::before,
+        .theme-timer::before {
+            background:
+                radial-gradient(circle at 20% 80%, rgba(16, 185, 129, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(6, 182, 212, 0.1) 0%, transparent 50%);
+        }
+
+        .timer-btn {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            border: 4px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 30px auto;
+        }
+
+        .timer-btn:hover {
+            border-color: #10b981;
+            transform: scale(1.05);
+            box-shadow: 0 0 40px rgba(16, 185, 129, 0.3);
+        }
+
+        .timer-btn.running {
+            border-color: #10b981;
+            animation: pulse-timer 1s infinite;
+        }
+
+        .timer-btn .icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        @keyframes pulse-timer {
+            0%, 100% { box-shadow: 0 0 0 rgba(16, 185, 129, 0); }
+            50% { box-shadow: 0 0 40px rgba(16, 185, 129, 0.5); }
+        }
+
+        .timer-instruction {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .timer-instruction p {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        .timer-instruction .hint {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .time-result {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #10b981;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .time-diff {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+        }
+
+        .time-diff.perfect {
+            color: #fbbf24;
+        }
+    </style>
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+        import { getFirestore, collection, doc, getDoc, setDoc, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCGYumcqNoGU5qDY8oaRThCxm8am9QFT7U",
+            authDomain: "luck-9cf68.firebaseapp.com",
+            projectId: "luck-9cf68",
+            storageBucket: "luck-9cf68.firebasestorage.app",
+            messagingSenderId: "975535609399",
+            appId: "1:975535609399:web:b94e1e4a07d75df82391b2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.firebaseDB = {
+            saveScore: async (nickname, timeDiff) => {
+                try {
+                    const docRef = doc(db, "timer_scores", nickname);
+                    const docSnap = await getDoc(docRef);
+
+                    // 기존 기록이 없거나, 새 기록이 더 좋으면 (7초에 더 가까우면) 저장
+                    if (!docSnap.exists() || Math.abs(docSnap.data().timeDiff) > Math.abs(timeDiff)) {
+                        await setDoc(docRef, {
+                            nickname: nickname,
+                            timeDiff: timeDiff,
+                            timestamp: new Date()
+                        });
+                    }
+                } catch (error) {
+                    console.error("점수 저장 실패:", error);
+                }
+            },
+            getScores: async () => {
+                try {
+                    // timeDiff의 절대값이 작은 순으로 정렬 (서버에서는 불가, 클라이언트에서 처리)
+                    const q = query(collection(db, "timer_scores"), limit(100));
+                    const snapshot = await getDocs(q);
+                    const scores = snapshot.docs.map(doc => doc.data());
+                    // 절대값 기준 정렬
+                    return scores.sort((a, b) => Math.abs(a.timeDiff) - Math.abs(b.timeDiff));
+                } catch (error) {
+                    console.error("랭킹 로드 실패:", error);
+                    return [];
+                }
+            }
+        };
+
+        window.dispatchEvent(new Event('firebaseReady'));
+    </script>
+</head>
+<body class="theme-timer">
+    <div class="container">
+        <!-- 게임 화면 -->
+        <div id="game-screen" class="screen active">
+            <div class="game-header">
+                <div class="player-info">
+                    <a href="games.html" class="back-link">← 게임 선택</a>
+                    <span id="player-name">플레이어</span>
+                </div>
+                <div class="score-display">
+                    <span class="label">목표</span>
+                    <span class="score-value">7.00초</span>
+                </div>
+            </div>
+
+            <div class="game-area">
+                <div class="timer-instruction">
+                    <p>버튼을 누르고 7초 후에 다시 누르세요!</p>
+                    <p class="hint">화면을 보지 않고 감각으로 맞춰보세요</p>
+                </div>
+
+                <div class="combo-display" id="combo-display"></div>
+
+                <button class="timer-btn" id="timer-btn">
+                    <span class="icon">⏱️</span>
+                    <span id="btn-text">시작</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 결과 화면 -->
+        <div id="result-screen" class="screen">
+            <div class="result-content">
+                <div class="result-icon" id="result-icon">⏱️</div>
+                <h2 id="result-title">결과</h2>
+
+                <div class="time-result" id="time-result">0.00초</div>
+                <p class="time-diff" id="time-diff"></p>
+
+                <p id="result-message"></p>
+
+                <div class="result-buttons">
+                    <button id="retry-btn" class="btn btn-primary">다시 도전</button>
+                    <button id="share-btn" class="btn btn-secondary">결과 공유</button>
+                </div>
+
+                <div class="leaderboard result-leaderboard">
+                    <h3>🏆 TOP 10 (7초에 가까운 순)</h3>
+                    <ul id="result-ranking-list"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="timer.js"></script>
+</body>
+</html>

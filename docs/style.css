@@ -206,6 +206,19 @@ input[type="text"]:focus {
 
 .player-info {
     font-weight: 500;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.back-link {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+}
+
+.back-link:hover {
+    color: var(--primary);
 }
 
 .score-display {

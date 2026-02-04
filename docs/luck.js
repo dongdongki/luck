@@ -1,19 +1,23 @@
 // 게임 상태
 let score = 0;
 let nickname = '';
-let isPlaying = false;
+let isPlaying = true;
 let firebaseReady = false;
+let allScores = [];
+
+// 닉네임 체크
+nickname = localStorage.getItem('luckGameNickname');
+if (!nickname) {
+    window.location.href = 'index.html';
+}
 
 // DOM 요소
 const screens = {
-    start: document.getElementById('start-screen'),
     game: document.getElementById('game-screen'),
     result: document.getElementById('result-screen')
 };
 
 const elements = {
-    nicknameInput: document.getElementById('nickname'),
-    startBtn: document.getElementById('start-btn'),
     playerName: document.getElementById('player-name'),
     score: document.getElementById('score'),
     comboDisplay: document.getElementById('combo-display'),
@@ -26,9 +30,11 @@ const elements = {
     probabilityStat: document.getElementById('probability-stat'),
     retryBtn: document.getElementById('retry-btn'),
     shareBtn: document.getElementById('share-btn'),
-    rankingList: document.getElementById('ranking-list'),
     resultRankingList: document.getElementById('result-ranking-list')
 };
+
+// 플레이어 이름 표시
+elements.playerName.textContent = nickname;
 
 // 화면 전환
 function showScreen(screenName) {
@@ -36,42 +42,15 @@ function showScreen(screenName) {
     screens[screenName].classList.add('active');
 }
 
-// 게임 시작
-async function startGame() {
-    const inputNickname = elements.nicknameInput.value.trim();
-    const savedNickname = localStorage.getItem('luckGameNickname');
-
-    if (!inputNickname) {
-        alert('닉네임을 입력해주세요!');
-        elements.nicknameInput.focus();
-        return;
-    }
-
-    // 닉네임 중복 체크 (저장된 닉네임과 같으면 본인이므로 통과)
-    if (firebaseReady && inputNickname !== savedNickname) {
-        const exists = await window.firebaseDB.checkNickname(inputNickname);
-        if (exists) {
-            alert('이미 사용 중인 닉네임입니다. 다른 닉네임을 입력해주세요.');
-            elements.nicknameInput.focus();
-            return;
-        }
-    }
-
-    // 닉네임 저장
-    localStorage.setItem('luckGameNickname', inputNickname);
-    nickname = inputNickname;
+// 게임 초기화
+function initGame() {
     score = 0;
     isPlaying = true;
-
-    elements.playerName.textContent = nickname;
     elements.score.textContent = '0';
     elements.comboDisplay.textContent = '';
     elements.comboDisplay.className = 'combo-display';
-
-    // 버튼 상태 초기화
     elements.btn0.className = 'choice-btn';
     elements.btn1.className = 'choice-btn';
-
     showScreen('game');
 }
 
@@ -79,22 +58,30 @@ async function startGame() {
 function handleChoice(userChoice) {
     if (!isPlaying) return;
 
-    isPlaying = false; // 중복 클릭 방지
+    isPlaying = false;
     const answer = Math.floor(Math.random() * 2);
     const chosenBtn = userChoice === 0 ? elements.btn0 : elements.btn1;
 
     if (userChoice === answer) {
-        // 성공
         score++;
         elements.score.textContent = score;
         chosenBtn.classList.add('correct');
 
-        // 콤보 메시지
-        const comboMessages = [
-            '좋아요!', '멋져요!', 'Nice!', 'Great!', '운이 좋네요!',
-            '계속 가보자!', 'Amazing!', '대박!', 'Perfect!', '천재인가요?!'
-        ];
-        elements.comboDisplay.textContent = comboMessages[Math.min(score - 1, comboMessages.length - 1)];
+        // 이긴 상대 찾기
+        const defeated = findDefeatedPlayer(score);
+        let comboText = '';
+
+        if (defeated) {
+            comboText = `${defeated.nickname}님을 넘었다!`;
+        } else {
+            const comboMessages = [
+                '좋아요!', '멋져요!', 'Nice!', 'Great!', '운이 좋네요!',
+                '계속 가보자!', 'Amazing!', '대박!', 'Perfect!', '천재인가요?!'
+            ];
+            comboText = comboMessages[Math.min(score - 1, comboMessages.length - 1)];
+        }
+
+        elements.comboDisplay.textContent = comboText;
         elements.comboDisplay.className = 'combo-display success';
 
         setTimeout(() => {
@@ -103,7 +90,6 @@ function handleChoice(userChoice) {
             isPlaying = true;
         }, 300);
     } else {
-        // 실패
         chosenBtn.classList.add('wrong');
         setTimeout(() => {
             endGame();
@@ -115,7 +101,6 @@ function handleChoice(userChoice) {
 async function endGame() {
     isPlaying = false;
 
-    // 확률 계산 (연속으로 score번 맞출 확률)
     const probability = Math.pow(0.5, score) * 100;
     let probabilityText = '';
 
@@ -129,12 +114,10 @@ async function endGame() {
         probabilityText = `이 점수를 기록할 확률: ${probability.toExponential(2)}% (대단해요!)`;
     }
 
-    // 결과 화면 설정
     elements.finalScore.textContent = score;
     elements.probabilityStat.textContent = probabilityText;
     elements.resultMessage.textContent = `${nickname}님의 운은 여기까지!`;
 
-    // 아이콘 및 타이틀 설정
     if (score >= 10) {
         elements.resultIcon.textContent = '🏆';
         elements.resultTitle.textContent = '대단해요!';
@@ -149,14 +132,12 @@ async function endGame() {
         elements.resultTitle.textContent = '다시 도전!';
     }
 
-    // 점수 저장
     if (score > 0 && firebaseReady) {
         await window.firebaseDB.saveScore(nickname, score);
+        allScores = await window.firebaseDB.getScores();
     }
 
-    // 랭킹 업데이트
     await loadRanking(elements.resultRankingList);
-
     showScreen('result');
 }
 
@@ -168,7 +149,7 @@ async function loadRanking(listElement) {
     }
 
     try {
-        const scores = await window.firebaseDB.getScores();
+        const scores = allScores.slice(0, 10);
 
         if (scores.length === 0) {
             listElement.innerHTML = '<li class="loading">아직 기록이 없습니다</li>';
@@ -204,13 +185,21 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// 이긴 상대 찾기
+function findDefeatedPlayer(currentScore) {
+    const defeated = allScores.find(entry =>
+        entry.score === currentScore && entry.nickname !== nickname
+    );
+    return defeated || null;
+}
+
 // 결과 공유
 function shareResult() {
     const text = `🍀 운빨 테스트 결과\n\n` +
         `닉네임: ${nickname}\n` +
         `점수: ${score}점\n` +
         `확률: ${(Math.pow(0.5, score) * 100).toFixed(score > 6 ? 4 : 2)}%\n\n` +
-        `나도 도전하기: ${window.location.href}`;
+        `나도 도전하기: ${window.location.origin}${window.location.pathname.replace('luck.html', '')}`;
 
     if (navigator.share) {
         navigator.share({
@@ -234,17 +223,11 @@ function copyToClipboard(text) {
 }
 
 // 이벤트 리스너
-elements.startBtn.addEventListener('click', startGame);
-elements.nicknameInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') startGame();
-});
-
 elements.btn0.addEventListener('click', () => handleChoice(0));
 elements.btn1.addEventListener('click', () => handleChoice(1));
 
 elements.retryBtn.addEventListener('click', () => {
-    showScreen('start');
-    loadRanking(elements.rankingList);
+    initGame();
 });
 
 elements.shareBtn.addEventListener('click', shareResult);
@@ -261,16 +244,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 // Firebase 준비 대기
-window.addEventListener('firebaseReady', () => {
+window.addEventListener('firebaseReady', async () => {
     firebaseReady = true;
-    loadRanking(elements.rankingList);
+    allScores = await window.firebaseDB.getScores();
 });
-
-// 초기 로딩 표시
-elements.rankingList.innerHTML = '<li class="loading">연결 중...</li>';
-
-// 저장된 닉네임 불러오기
-const savedNickname = localStorage.getItem('luckGameNickname');
-if (savedNickname) {
-    elements.nicknameInput.value = savedNickname;
-}
